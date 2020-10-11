@@ -1,0 +1,82 @@
+哈希表对应的容器是 unordered_map
+哈希表是根据关键码值(key value)而直接进行访问的数据结构。
+哈希表的一个重要问题就是如何解决映射冲突的问题。常用的有两种：开放地址法 和 链地址法。
+
+map 对应的数据结构是 红黑树。红黑树是一种近似于平衡的二叉查找树，里面的数据是有序的，在红黑树上做查找操作的时间复杂度为 O(logN)。
+
+unordered_map 对应 哈希表，哈希表的特点就是查找效率高，时间复杂度为常数级别 O(1)， 而额外空间复杂度则要高出许多
+
+所以对于需要高效率查询的情况，使用 unordered_map 容器。而如果对内存大小比较敏感或者数据存储要求有序的话，则可以用 map 容器。
+
+#include <iostream>
+#include <unordered_map>
+#include <string>
+int main(int argc, char **argv) {
+    std::unordered_map<int, std::string> map;
+    map.insert(std::make_pair(1, "Scala"));
+    map.insert(std::make_pair(2, "Haskell"));
+    map.insert(std::make_pair(3, "C++"));
+    map.insert(std::make_pair(6, "Java"));
+    map.insert(std::make_pair(14, "Erlang"));
+    std::unordered_map<int, std::string>::iterator it;
+    if ((it = map.find(6)) != map.end()) {
+        std::cout << it->second << std::endl;
+    }
+    return 0;
+}
+
+STL 只为 C++ 常用类提供了散列函数，因此如果想在 unordered_map 中使用自定义的类，则必须为此类提供一个哈希函数和一个判断对象是否相等的函数（e.g. 重载 == 运算符）
+using std::string;
+using std::cin;
+using std::cout;
+using std::endl;
+using std::unordered_map;
+class Person {
+public:
+    string phone;
+    string name;
+    string address;
+    explicit Person() {}
+    explicit Person(string name, string phone, string address): name(name), phone(phone), address(address) {}
+    // overload operator==
+    bool operator==(const Person& p) {
+        return this->phone == p.phone && this->name == p.name
+            && this->address == p.address;
+    }
+    inline friend std::ostream& operator<<(std::ostream& os, Person& p) {
+        os << "[Person] -> (" << p.name << ", " << p.phone << ", "
+           << p.address << ")";
+        return os;
+    }
+};
+// declare hash<Person>
+namespace std {
+ template <>
+ struct hash<Person> {
+     std::size_t operator()(const Person& p) const {
+      using std::size_t;
+      using std::hash;
+      using std::string;
+      // Compute individual hash values for first,
+      // second and third and combine them using XOR
+      // and bit shifting:
+      return ((hash<string>()(p.phone)
+        ^ (hash<string>()(p.name) << 1)) >> 1)
+        ^ (hash<string>()(p.address) << 1);
+     }
+ };
+}
+unordered_map<string, Person> phoneMap;
+void selectByPhone() {
+    string phone;
+    cout << "Input the phone number: "; cin >> phone;
+    unordered_map<string, Person>::iterator it;
+    int size = phoneMap.size();
+    for(int pc = 0; pc < size; pc++) {
+        if((it = phoneMap.find(phone)) != phoneMap.end()) {
+            cout << "Query result: " << it->second << endl;
+            return;
+        }
+    }
+    cout << "Query result : target_not_found" << endl;
+}
